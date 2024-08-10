@@ -1,4 +1,5 @@
 #include <string>
+#include <fstream>
 
 using namespace std;
 
@@ -6,9 +7,9 @@ void xtalk(){
    
    // ---- ---- ---- ---- Retrieving files and histograms ---- ---- ---- ----
    
-   TFile *f_injtype1 = new TFile("Run000059_PixelAlive.root");
-   TFile *f_injtype5 = new TFile("Run000060_PixelAlive.root");
-   TFile *f_injtype6 = new TFile("Run000061_PixelAlive.root");
+   TFile *f_injtype1 = new TFile("inputroot/Run000059_PixelAlive.root");
+   TFile *f_injtype5 = new TFile("inputroot/Run000060_PixelAlive.root");
+   TFile *f_injtype6 = new TFile("inputroot/Run000061_PixelAlive.root");
    
    float alive_eff = 0.9;
    float coupled_eff = 0.5;
@@ -19,7 +20,7 @@ void xtalk(){
    string module = "RH0026";
 
    
-   for (int ch = 13; ch >= 12; ch--){
+   for (int ch = 12; ch >= 12; ch--){
 
     string chip = to_string(ch);
     string plotDir = "plots/";
@@ -34,13 +35,10 @@ void xtalk(){
     int nColumns = h_pixelalive5->GetXaxis()->GetNbins();
     int nRows = h_pixelalive5->GetYaxis()->GetNbins();
     
-    //cout << "nRows: " << nRows << "  nColumns: " << nColumns << endl;
+    cout << "nRows: " << nRows << "  nColumns: " << nColumns << endl;
     
     
-    
-    
-    
-    
+
     // ---- ---- ---- ---- analysis ---- ---- ---- ----
     
     vector<int> dead_row,dead_col,suspicious_row,suspicious_col,confirmed_row,confirmed_col;
@@ -59,20 +57,18 @@ void xtalk(){
                 detectable = false;
             }
             if (detectable){
-                if ((i==0 && j%2 == 0) || (i==nRows-1 && j%2 == 1)) detectable = false;
+                if ((i==0 && j%2 == 0) || (i==nRows-1 && j%2 == 1)){
+                    detectable = false;
+                }
             }
-            if (detectable && h_pixelalive1->GetBinContent(j+1,i+1)>alive_eff && h_pixelalive5->GetBinContent(j+1,i+1)<coupled_eff){
-                suspicious_row.push_back(i);
-                suspicious_col.push_back(j);
-                h_suspicious2D->SetBinContent(j+1,i+1,1);
-            }
-            else h_suspicious2D->SetBinContent(j+1,i+1,0.0001);
             if (detectable && h_pixelalive1->GetBinContent(j+1,i+1)>alive_eff && h_pixelalive5->GetBinContent(j+1,i+1)<coupled_eff && h_pixelalive6->GetBinContent(j+1,i+1)<uncoupled_eff){
                 confirmed_row.push_back(i);
                 confirmed_col.push_back(j);
+                h_confirmed2D->SetBinContent(j+1,i+1,0);
+            }
+            else {
                 h_confirmed2D->SetBinContent(j+1,i+1,1);
             }
-            else h_confirmed2D->SetBinContent(j+1,i+1,0.0001);
         }
     }
     
@@ -83,13 +79,11 @@ void xtalk(){
     cout << "    confirmed:   " << confirmed_row.size() << endl;
     
     
-
-    
     // ---- ---- ---- ---- plotting ---- ---- ---- ----
     
     gStyle->SetOptStat(0);
     // TCanvas arguments are: name, title, x, y, width, height
-    TCanvas *c_pixelalive1 = new TCanvas(("c_pixelalive1_"+chip).c_str(),("Efficiency when injecting in same pixel of chip "+chip).c_str(),800,768);
+    /* TCanvas *c_pixelalive1 = new TCanvas(("c_pixelalive1_"+chip).c_str(),("Efficiency when injecting in same pixel of chip "+chip).c_str(),800,768);
     h_pixelalive1->Draw("colz");
     c_pixelalive1->SaveAs((plotDir+module+"_pixelalive_"+chip+".png").c_str());
     
@@ -103,12 +97,16 @@ void xtalk(){
     
     TCanvas *c_suspicious2D = new TCanvas(("c_suspicious2D_"+chip).c_str(),("Suspicious channels of chip "+chip).c_str(),800,768);
     h_suspicious2D->Draw("colz");
-    c_suspicious2D->SaveAs((plotDir+module+"_suspicious2D_"+chip+".png").c_str());
+    c_suspicious2D->SaveAs((plotDir+module+"_suspicious2D_"+chip+".png").c_str()); */
     
-    TCanvas *c_confirmed2D = new TCanvas(("c_confirmed2D_"+chip).c_str(),("Confirmed disconnected channels of chip "+chip).c_str(),800,768);
+    TCanvas *c_confirmed2D = new TCanvas(("c_confirmed2D_"+chip).c_str(),("Confirmed disconnected channels of chip "+chip).c_str(),800,768); // Necessary plot
     h_confirmed2D->Draw("colz");
-    c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
-     
+    //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
+
+    //Create root file out of missing bumps histogram
+    TFile out_file("outputroot/h_missing2dC12.root","RECREATE");
+    h_confirmed2D->Write();
+    out_file.Close();
      
      
      

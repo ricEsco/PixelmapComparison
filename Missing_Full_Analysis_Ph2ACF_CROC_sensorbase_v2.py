@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
+import csv
 
 # Arguments --------------------
 parser = argparse.ArgumentParser(description='Do the XRay analysis')
@@ -32,8 +33,8 @@ parser.add_argument('-nbx','--nbx', help = 'The total # of bunch crossing for ea
 
 args = parser.parse_args()
 
-Module=args.module; thr_data_file=args.scurve+'_SCurve.root'; Path='results/'+args.outpath+'/'
-analyzed_data_file=args.occupancy+'_PixelAlive.root'; analyzed_txt_file=args.scurve+'_CMSIT_RD53_RH0026_0_12.txt'
+Module=args.module; thr_data_file='inputroot/'+args.scurve+'_SCurve.root'; Path='results/'+args.outpath+'/'
+analyzed_data_file='inputroot/'+args.occupancy+'_PixelAlive.root'; analyzed_txt_file='txt/'+args.scurve+'_CMSIT_RD53_RH0026_0_13.txt'
 Thr=args.thr_missing; Thr_strange=args.thr_strange; Voltage_1=args.bias; 
 V_adc=args.vref; nTrg=args.ntrg; nBX=args.nbx
 
@@ -85,18 +86,8 @@ def ExtractThrData():
     Noise_L=NoiseMap.flatten(); Thr_L=ThrMap.flatten(); 
     return ThrMap, NoiseMap, ToTMap, ReadoutErrors, FitErrors, Noise_L, Thr_L
 
-def gaus(X,A,X_mean,sigma): return A*np.exp(-(X-X_mean)**2/(2*sigma**2))
-def GAUSS_FIT(x_hist,y_hist,color):
-    mean = sum(x_hist*y_hist)/sum(y_hist)               
-    sigma = sum(y_hist*(x_hist-mean)**2)/sum(y_hist)
-    #Gaussian least-square fitting process
-    param_optimised,param_covariance_matrix = curve_fit(gaus,x_hist,y_hist,p0=[1,mean,sigma])#,maxfev=5000)
-    x_hist_2=np.linspace(np.min(x_hist),np.max(x_hist),500)
-    plt.plot(x_hist_2,gaus(x_hist_2,*param_optimised),color,label='FIT: $\mu$ = '+str(round(param_optimised[1],1))+' e$^-$ $\sigma$ = '+str(abs(round(param_optimised[2],1)))+' e$^-$')
-
 def XRayAnalysis(nTrg,nBX):
     Mask_before = GetMaskFromTxt(analyzed_txt_file,num_rows,num_cols) # 0 in Mask_before means MASKED, 1 Good
-    print(Mask_before)
     Disabled=np.where(Mask_before==0)
     
     inFile = ROOT.TFile.Open(analyzed_data_file,"READ")
@@ -125,94 +116,13 @@ def XRayAnalysis(nTrg,nBX):
     Missing_strange=np.where(Missing_mat_strange==1)
     Perc_missing_strange=float("{:.4f}".format((Missing_strange[0].size/((num_rows*num_cols)-Disabled[0].size))*100))
     # 0=MASKED 1=MISSING 2=ERRORS 3=GOOD -1= STRANGE
-    Missing_mat[Missing_strange[0],Missing_strange[1]]=-1 #IMPORTANT TO REMOVE FOR PLOTS IF NO STRANGE
-    
-    """ Data=To25x100SensorCoordinates(Data)
-    Missing_mat=To25x100SensorCoordinates(Missing_mat.T) #traspose for the same reason... consider that as output I wil lprovide the Transpose again so it should be fine
-    ToTMapX=To25x100SensorCoordinates(ToTMapX) """
+    # Missing_mat[Missing_strange[0],Missing_strange[1]]=-1 #IMPORTANT TO REMOVE FOR PLOTS IF NO STRANGE
 
+    # Transform missing_mat to binary arr
+    
     return Disabled[0].size, Data, Data_L, Missing_mat.T, Missing[0].size, Missing_strange[0].size, ReadoutErrorsXRay, Perc_missing, Perc_missing_strange, ToTMapX
 
 def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, Missing, Missing_strange, Perc_missing, Perc_missing_strange, Disabled, ToTMapX, FitErrors):
-    # pixelalive Map
-    """ fig1 = plt.figure()
-    ax = fig1.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    imgplot = ax.imshow(NoiseMap*el_conv, vmax=Noise_MAX) #150vmax
-    ax.set_aspect(0.25)
-    bar1=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='electrons')
-    fig1.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Occupancy_Map.png', format='png', dpi=300)
-
-    # Histogram
-    fig2 = plt.figure(figsize=(1050/96, 750/96), dpi=96)
-    ax = fig2.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    h_S=plt.hist(Noise_L*el_conv,color='black',bins = np.arange(0,Noise_MAX,step_noise),label='pixelalive',histtype='step')
-    if FIT: GAUSS_FIT(h_S[1][:-1],h_S[0],'red')
-    ax.set_ylim([0.1, 10000])
-    ax.set_yscale('log')
-    ax.set_xlabel('electrons')
-    ax.set_ylabel('entries')
-    ax.legend(prop={'size': 14}, loc='upper right')
-    fig2.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Occupancy_Hist.png', format='png', dpi=300)
-
-    # Threshold Map
-    fig3 = plt.figure()
-    ax = fig3.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    imgplot = ax.imshow(ThrMap*el_conv, vmax=Thr_MAX, vmin=1200) #3500 vmax
-    ax.set_aspect(0.25)
-    bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='electrons')
-    fig3.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Threshold_Map.png', format='png', dpi=300)
-
-    # ToT Map
-    fig7 = plt.figure()
-    ax = fig7.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    imgplot = ax.imshow(ToTMap)
-    ax.set_aspect(0.25)
-    bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='ToT')
-    fig7.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_ToT_Map.png', format='png', dpi=300)
-
-    # ToT Map XRay
-    fig10 = plt.figure()
-    ax = fig10.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    imgplot = ax.imshow(ToTMapX)
-    ax.set_aspect(0.25)
-    bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='ToT')
-    fig10.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_ToT_Map_XRay.png', format='png', dpi=300)
-
-
-    #Histogram
-    fig4 = plt.figure(figsize=(1050/96, 750/96), dpi=96)
-    ax = fig4.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    h_L=plt.hist(Thr_L*el_conv,color='black',bins = np.arange(0,Thr_MAX,step_thr),label='Threshold',histtype='step')
-    if FIT: GAUSS_FIT(h_L[1][:-1],h_L[0],'red')
-    ax.set_ylim([0.1, YMAX])
-    ax.set_xlim([0, Thr_MAX])
-    ax.set_yscale('log')
-    ax.set_xlabel('electrons')
-    ax.set_ylabel('entries')
-    ax.legend(prop={'size': 14}, loc='upper left')
-    fig4.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Threshold_Hist.png', format='png', dpi=300)
-
-    # XRAY PART
-    # HITS/PXL HISTOGRAM WITH X-RAYS
-    fig5 = plt.figure(figsize=(1050/96, 750/96), dpi=96)
-    ax = fig5.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    ax.set_yscale('log')
-    # h_LIN=plt.hist(Data_L,color='black',bins = range(0,int(VMAX*3.0),step),label='Hits/pixel',histtype='step')
-    h_LIN=plt.hist(Data_L,color='black',bins = range(0,2000,step),label='Hits/pixel',histtype='step')
-    ax.plot([Thr,Thr],[0,2e3],'--r',linewidth=2)
-    ax.plot([Thr_strange,Thr_strange],[0,2e3],'--r',linewidth=2)
-    ax.set_xlabel('Number of total Hits/pixel')
-    ax.set_ylabel('entries')
-    ax.legend(prop={'size': 14}, loc='upper right')
-    fig5.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Hist_Thr_'+str(Thr)+'_'+str(Thr_strange)+'.png', format='png', dpi=300) """
-
     # Raw Hit Map from XRay alone
     fig8 = plt.figure()
     ax = fig8.add_subplot(111)
@@ -221,15 +131,6 @@ def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, M
     ax.set_aspect(0.25)
     bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='Hits')
     fig8.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_XRay_Hits_Map.png', format='png', dpi=300)
-
-    # Raw Hit Map from XRay alone
-    """ fig9 = plt.figure()
-    ax = fig9.add_subplot(111)
-    ax.spines["bottom"].set_linewidth(1); ax.spines["left"].set_linewidth(1); ax.spines["top"].set_linewidth(1); ax.spines["right"].set_linewidth(1)
-    imgplot = ax.imshow(Data[0:35,0:15], vmax=VMAX)
-    ax.set_aspect(0.25)
-    bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='Hits')
-    fig9.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_XRay_Hits_Map_zoom.png', format='png', dpi=300) """
 
     # MISSING BUMPS FINAL MAPS
     fig6, (ax1, ax2) = plt.subplots(1,2, figsize=(13, 7.5))
@@ -251,6 +152,27 @@ def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, M
     bar2=plt.colorbar(imgplot2, ticks=bounds, orientation='horizontal', label='Low Occ   Masked      Missing       Good      ',  spacing='proportional', shrink=1)
     bar2.set_ticks([])
     fig6.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Missing_Bumps_Thr_'+str(Thr)+'_'+str(Thr_strange)+'.png', format='png', dpi=300)
+    
+    Missing_mat[Missing_mat == 0] = 3
+    Missing_mat[Missing_mat == 1] = 0
+    Missing_mat[Missing_mat == 2] = 1
+    Missing_mat[Missing_mat == 3] = 1
+
+    num_cols = Missing_mat.shape[1]
+    num_rows = Missing_mat.shape[0]
+
+    missing_hist = ROOT.TH2F('MissingMap', 'Missing Map', num_cols, 0, num_cols, num_rows, 0, num_rows)
+    
+    Missing_matflip = np.flipud(Missing_mat)
+    for i in range(num_cols):
+        for j in range(num_rows):
+            missing_hist.SetBinContent(i+1, j+1, Missing_matflip[j, i])
+
+    output_file = ROOT.TFile('/home/kalib/Analysis/outputroot/xrayroot12.root', 'RECREATE')
+    missing_hist.Write()
+    output_file.Close()
+    print("Histogram saved")
+
     return
 
 def TerminalInfos(FitErrors,ReadoutErrors,Disabled,ReadoutErrorsXRay,Missing,Missing_strange,Perc_missing,Perc_missing_strange,Missing_mat):
@@ -271,18 +193,7 @@ def TerminalInfos(FitErrors,ReadoutErrors,Disabled,ReadoutErrorsXRay,Missing,Mis
     print('Total # of pixels:\t'+str(num_cols*num_rows))
     print('##############################################################\n')
     return
-
-""" def To25x100SensorCoordinates(npArray):
-    new_rows=num_rows*2; new_cols=num_cols//2
-    NewArray=np.zeros((new_rows,new_cols), dtype=npArray.dtype)
-    for i in range(num_cols):
-        for j in range(num_rows):
-            #Conversion from CMSIT coverter plugin for 25x100r0c0 of Mauro
-            row = 2*j+(i%2)
-            col = int(i/2)
-            NewArray[row,col]=npArray[j,i]
-    return NewArray """
-    
+   
 def main():
     ThrMap, NoiseMap, ToTMap, ReadoutErrors, FitErrors, Noise_L, Thr_L = ExtractThrData()
     Disabled, Data, Data_L, Missing_mat, Missing, Missing_strange, ReadoutErrorsXRay, Perc_missing, Perc_missing_strange, ToTMapX = XRayAnalysis(nTrg,nBX)
