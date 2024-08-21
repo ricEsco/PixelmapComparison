@@ -16,7 +16,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
-import csv
 
 # Arguments --------------------
 parser = argparse.ArgumentParser(description='Do the XRay analysis')
