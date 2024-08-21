@@ -112,7 +112,7 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
 xray_file_path = "/home/kalib/Analysis/outputroot/xray/xrayroot12.root"
 xtalk_file_path = "/home/kalib/Analysis/outputroot/xtalk/h_missing2dC12.root"
 frbias_file_path = "/home/kalib/Analysis/outputroot/frbias/histograms.root"
-output_file_path = "/home/kalib/Analysis/outputroot/RH0026C12Comparison.root"
+output_file_path = "/home/kalib/Analysis/results/RH0026C12Comparison.root"
 png_file_path_base = "/home/kalib/Analysis/results/histogram"
 
 compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output_file_path)

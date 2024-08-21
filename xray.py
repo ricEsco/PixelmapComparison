@@ -32,8 +32,8 @@ parser.add_argument('-nbx','--nbx', help = 'The total # of bunch crossing for ea
 
 args = parser.parse_args()
 
-Module=args.module; thr_data_file='inputroot/'+args.scurve+'_SCurve.root'; Path='results/'+args.outpath+'/'
-analyzed_data_file='inputroot/'+args.occupancy+'_PixelAlive.root'; analyzed_txt_file='txt/'+args.scurve+'_CMSIT_RD53_RH0026_0_13.txt'
+Module=args.module; thr_data_file='input/'+args.scurve+'_SCurve.root'; Path='results/'+args.outpath+'/'
+analyzed_data_file='input/'+args.occupancy+'_PixelAlive.root'; analyzed_txt_file='txt/'+args.scurve+'_CMSIT_RD53_RH0026_0_13.txt'
 Thr=args.thr_missing; Thr_strange=args.thr_strange; Voltage_1=args.bias; 
 V_adc=args.vref; nTrg=args.ntrg; nBX=args.nbx
 
