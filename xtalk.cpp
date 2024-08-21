@@ -64,10 +64,10 @@ void xtalk(){
             if (detectable && h_pixelalive1->GetBinContent(j+1,i+1)>alive_eff && h_pixelalive5->GetBinContent(j+1,i+1)<coupled_eff && h_pixelalive6->GetBinContent(j+1,i+1)<uncoupled_eff){
                 confirmed_row.push_back(i);
                 confirmed_col.push_back(j);
-                h_confirmed2D->SetBinContent(j+1,i+1,0);
+                h_confirmed2D->SetBinContent(j+1,i+1,1);
             }
             else {
-                h_confirmed2D->SetBinContent(j+1,i+1,1);
+                h_confirmed2D->SetBinContent(j+1,i+1,0);
             }
         }
     }
@@ -104,7 +104,7 @@ void xtalk(){
     //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
 
     //Create root file out of missing bumps histogram
-    TFile out_file("outputroot/h_missing2dC12.root","RECREATE");
+    TFile out_file("outputroot/xtalk/h_missing2dC12.root","RECREATE");
     h_confirmed2D->Write();
     out_file.Close();
      
