@@ -1,10 +1,12 @@
 ##############################################################################
-# Author: M.Antonello 
+# Original Author: M.Antonello 
 # Date: 29/07/2023
-# Input: 1 physics root file of a X-Ray scan + 1 Thr root file + the relative txt file 
-# Usage: python3 Missing_Full_Analysis_Ph2ACF_CROC.py -scurve Run000083 -occupancy Run000088 -outpath ADVCAM -module ADV_W_8_64 -bias 30 -vref 785
-# Output: png plots with the main results
-# Variables to change: Module, Thr, VMAX (only if hot pixels are present) 
+# Adapted by: Kalib McEuen and Ricardo Escobar
+# Input: 1 SCurve root file (after tuning) + 1 corresponding txt file + 1 root file of an X-Ray occupancy scan
+# Usage: python3 xray.py -scurve <Run # of scruve> -occupancy <Run # of occupancy scan> -module <Module ID> -chip <chip#> -thr_missing <threshold for missing bumps> -bias <bias voltage>
+# Output: png plots
+# Variables to change: SCurve run #, Occupancy run #, module ID, chip number, threshold for missing bumps, bias voltage
+# Variables to change: # of triggers during occupancy scan, # bunch xings during occupancy scan, VMAX (only if hot pixels are present) 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ##############################################################################
@@ -19,32 +21,32 @@ import argparse
 
 # Arguments --------------------
 parser = argparse.ArgumentParser(description='Do the XRay analysis')
-parser.add_argument('-scurve','--scurve', help = 'The name of the SCurve.root (and txt) file', default = 'Run000081', type = str)
-parser.add_argument('-occupancy','--occupancy', help = 'The name of the pixelalive.root file', default = 'Run000040', type = str)
-parser.add_argument('-outpath','--outpath', help = 'The name of the folder to be creaated in results', default = 'RH0026C12', type = str)
-parser.add_argument('-module','--module', help = 'The name of the module', default = 'RH0026', type = str)
-parser.add_argument('-thr_missing','--thr_missing', help = 'The threshold to classify the missing bumps [Hits]', default = 1, type = int)
-parser.add_argument('-thr_strange','--thr_strange', help = 'The threshold to classify the Low Occ bumps [Hits]', default = 1000, type = int)
-parser.add_argument('-bias','--bias', help = 'The bias of the module [V]', default = '80', type = str)
-parser.add_argument('-vref','--vref', help = 'The VRef_ADC [mV]', default = 800, type = int)
-parser.add_argument('-ntrg','--ntrg', help = 'The total # of triggers in the xml', default = 1e7, type = int)
-parser.add_argument('-nbx','--nbx', help = 'The total # of bunch crossing for each trigger in the xml', default = 10, type = int) # AKA nEventsBurst
+parser.add_argument('-scurve','--scurve', help = 'The name of the SCurve.root (and txt) file',               default = 'Run000081', type = str)
+parser.add_argument('-occupancy','--occupancy', help = 'The name of the pixelalive.root file',               default = 'Run000040', type = str)
+parser.add_argument('-module','--module', help = 'The name of the module',                                   default = 'RH0026', type = str)
+parser.add_argument('-chip','--chip', help = 'The ROC ID [12,15] for Quads and [12,13] for Duals',           default = '12', type = str)
+parser.add_argument('-thr_missing','--thr_missing', help = 'threshold to classify the missing bumps [Hits]', default = 1, type = int)
+parser.add_argument('-thr_strange','--thr_strange', help = 'threshold to classify the Low Occ bumps [Hits]', default = 1000, type = int)
+parser.add_argument('-bias','--bias', help = 'The bias of the module [V]',                                   default = '80', type = str)
+parser.add_argument('-vref','--vref', help = 'The VRef_ADC [mV]',                                            default = 800, type = int)
+parser.add_argument('-ntrg','--ntrg', help = 'The total # of triggers in the xml',                           default = 1e7, type = int)
+parser.add_argument('-nbx','--nbx', help = 'Number of bunch xings for each trigger (nEventsBurst) in xml',   default = 10, type = int)
 
 args = parser.parse_args()
 
-Module=args.module; thr_data_file='input/'+args.scurve+'_SCurve.root'; Path='results/'+args.outpath+'/'
-analyzed_data_file='input/'+args.occupancy+'_PixelAlive.root'; analyzed_txt_file='txt/'+args.scurve+'_CMSIT_RD53_RH0026_0_13.txt'
+Module=args.module; chipID=args.chip; thr_data_file='input/'+args.scurve+'_SCurve.root'; Path='output/'
+analyzed_data_file='input/'+args.occupancy+'_PixelAlive.root'; analyzed_txt_file='input/txt/'+args.scurve+'_CMSIT_RD53_RH0026_0_'+args.chip+'.txt'
 Thr=args.thr_missing; Thr_strange=args.thr_strange; Voltage_1=args.bias; 
 V_adc=args.vref; nTrg=args.ntrg; nBX=args.nbx
 
 
 ####### PARAMETERS TO BE CHANGED MANUALLY: ###################################  
-H_ID='0'; C_ID='12'; num_rows = 336; num_cols = 432; FIT=True
+H_ID='0'; num_rows = 336; num_cols = 432; FIT=True
 el_conv=V_adc/162; Noise_MAX=65*el_conv; Thr_MAX=600*el_conv 
 step_noise=0.1*el_conv; step_thr=2*el_conv; YMAX=100000; step=10; VMAX=7000; 
 ##############################################################################
 
-if not os.path.exists(Path+Module): os.makedirs(Path+Module)
+if not os.path.exists(Module): os.makedirs(Module)
 
 def GetMaskFromTxt(file_path,num_rows,num_cols):
     array_2d = np.zeros((num_rows,num_cols))
@@ -58,8 +60,8 @@ def GetMaskFromTxt(file_path,num_rows,num_cols):
     return array_2d.T
 
 def Ph2_ACFRootExtractor(infile,Scan_n,type):
-    canvas = infile.Get("Detector/Board_0/OpticalGroup_0/Hybrid_"+H_ID+"/Chip_"+str(int(C_ID))+"/D_B(0)_O(0)_H("+H_ID+")_"+Scan_n+"_Chip("+str(int(C_ID))+")")
-    map_r = canvas.GetPrimitive("D_B(0)_O(0)_H("+H_ID+")_"+Scan_n+"_Chip("+str(int(C_ID))+")")
+    canvas = infile.Get("Detector/Board_0/OpticalGroup_0/Hybrid_"+H_ID+"/Chip_"+chipID+"/D_B(0)_O(0)_H("+H_ID+")_"+Scan_n+"_Chip("+str(int(chipID))+")")
+    map_r = canvas.GetPrimitive("D_B(0)_O(0)_H("+H_ID+")_"+Scan_n+"_Chip("+chipID+")")
     if "2D" in type:
         # Convert the TH2F histogram to np array (NB: bin numbering in root starts from 1, numpy from 0)
         map = np.zeros((map_r.GetNbinsX(), map_r.GetNbinsY()))
@@ -74,11 +76,8 @@ def Ph2_ACFRootExtractor(infile,Scan_n,type):
 def ExtractThrData():
     inFile = ROOT.TFile.Open(thr_data_file,"READ")
     ThrMap=Ph2_ACFRootExtractor(inFile,'Threshold2D','2D')
-    #ThrMap=To25x100SensorCoordinates(ThrMap)
     NoiseMap=Ph2_ACFRootExtractor(inFile,'Noise2D','2D')
-    #NoiseMap=To25x100SensorCoordinates(NoiseMap)
     ToTMap=Ph2_ACFRootExtractor(inFile,'ToT2D','2D')
-    #ToTMap=To25x100SensorCoordinates(ToTMap)
     ReadoutErrors=Ph2_ACFRootExtractor(inFile,'ReadoutErrors','Entries')
     FitErrors=Ph2_ACFRootExtractor(inFile,'FitErrors','Entries')
     inFile.Close()
@@ -128,12 +127,12 @@ def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, M
     imgplot = ax.imshow(Data, vmax=VMAX)
     ax.set_aspect(0.25)
     bar2=plt.colorbar(imgplot, orientation='horizontal', extend='max', label='Hits')
-    fig8.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_XRay_Hits_Map.png', format='png', dpi=300)
+    fig8.savefig(Module+'/'+'chip_'+chipID+'_XRay_Hits_Map.png', format='png', dpi=300)
 
     # MISSING BUMPS FINAL MAPS
     fig6, (ax1, ax2) = plt.subplots(1,2, figsize=(13, 7.5))
     plt.rcParams.update({'font.size': 16})
-    fig6.suptitle("Module: "+Module+" chip_"+str(int(C_ID))+" -- Masked pixels: "+str(Disabled)+" -- Fit errors: "+str(FitErrors)+"\nMissing bumps (<"+str(Thr)+" hits): "+str(Missing)+" ("+str(Perc_missing)+"%) -- Low Occ bumps (<"+str(Thr_strange)+" hits): "+str(Missing_strange)+" ("+str(Perc_missing_strange)+"%)")
+    fig6.suptitle("Module: "+Module+" chip_"+chipID+" -- Masked pixels: "+str(Disabled)+" -- Fit errors: "+str(FitErrors)+"\nMissing bumps (<"+str(Thr)+" hits): "+str(Missing)+" ("+str(Perc_missing)+"%) -- Low Occ bumps (<"+str(Thr_strange)+" hits): "+str(Missing_strange)+" ("+str(Perc_missing_strange)+"%)")
     imgplot = ax1.imshow(Data, vmax=VMAX)
     ax1.set_title("Hit Map (Z Lim: %s hits)" % str(VMAX))
     ax1.set_aspect(0.25)
@@ -149,7 +148,7 @@ def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, M
     ax2.spines["bottom"].set_linewidth(1); ax2.spines["left"].set_linewidth(1); ax2.spines["top"].set_linewidth(1); ax2.spines["right"].set_linewidth(1)
     bar2=plt.colorbar(imgplot2, ticks=bounds, orientation='horizontal', label='Low Occ   Masked      Missing       Good      ',  spacing='proportional', shrink=1)
     bar2.set_ticks([])
-    fig6.savefig(Path+Module+'/'+'chip_'+str(int(C_ID))+'_Missing_Bumps_Thr_'+str(Thr)+'_'+str(Thr_strange)+'.png', format='png', dpi=300)
+    fig6.savefig(Module+'/'+'chip_'+chipID+'_Missing_Bumps_Thr_'+str(Thr)+'_'+str(Thr_strange)+'.png', format='png', dpi=300)
     
     # Transform missing_mat to binary arr
     #Missing_mat[Missing_mat == 0] = 3
@@ -167,7 +166,7 @@ def Plots(ToTMap, NoiseMap, Noise_L, ThrMap, Thr_L, Data, Data_L, Missing_mat, M
         for j in range(num_rows):
             missing_hist.SetBinContent(i+1, j+1, Missing_matflip[j, i])
 
-    output_file = ROOT.TFile('/home/kalib/Analysis/outputroot/xray/xrayroot12.root', 'RECREATE')
+    output_file = ROOT.TFile(Path+'/xray_m-'+Module+'_c-'+chipID+'.root', 'RECREATE')
     missing_hist.Write()
     output_file.Close()
     print("Histogram saved")

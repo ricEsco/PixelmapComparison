@@ -4,22 +4,24 @@
 using namespace std;
 
 void xtalk(){
+
+    // ---- ---- ---- ---- Declaration of variables ---- ---- ---- ----
+    string module = "RH00026";
+    string injtype1_run = "Run000059"; // Run # of Pixelalive with injection type 1
+    string injtype5_run = "Run000060"; // Run # of Pixelalive with injection type 5
+    string injtype6_run = "Run000061"; // Run # of Pixelalive with injection type 6
+    float alive_eff = 0.9;             // Threshold (as a fraction) for a pixel to be considered alive
+    float coupled_eff = 0.5;           // Threshold (as a fraction) for a pixel to be considered coupled
+    float uncoupled_eff = 0.3;         // Threshold (as a fraction) for a pixel to be considered uncoupled
    
    // ---- ---- ---- ---- Retrieving files and histograms ---- ---- ---- ----
    
-   TFile *f_injtype1 = new TFile("inputroot/Run000059_PixelAlive.root");
-   TFile *f_injtype5 = new TFile("inputroot/Run000060_PixelAlive.root");
-   TFile *f_injtype6 = new TFile("inputroot/Run000061_PixelAlive.root");
-   
-   float alive_eff = 0.9;
-   float coupled_eff = 0.5;
-   float uncoupled_eff = 0.3;
-   
+   TFile *f_injtype1 = new TFile("input/"+injtype1_run+"_PixelAlive.root");
+   TFile *f_injtype5 = new TFile("input/"+injtype5_run+"_PixelAlive.root");
+   TFile *f_injtype6 = new TFile("input/"+injtype6_run+"_PixelAlive.root");
    string baseDir = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_";
    string shortBaseDir = "D_B(0)_O(0)_H(0)_";
-   string module = "RH0026";
 
-   
    for (int ch = 12; ch >= 12; ch--){
 
     string chip = to_string(ch);
@@ -82,29 +84,13 @@ void xtalk(){
     // ---- ---- ---- ---- plotting ---- ---- ---- ----
     
     gStyle->SetOptStat(0);
-    // TCanvas arguments are: name, title, x, y, width, height
-    /* TCanvas *c_pixelalive1 = new TCanvas(("c_pixelalive1_"+chip).c_str(),("Efficiency when injecting in same pixel of chip "+chip).c_str(),800,768);
-    h_pixelalive1->Draw("colz");
-    c_pixelalive1->SaveAs((plotDir+module+"_pixelalive_"+chip+".png").c_str());
-    
-    TCanvas *c_pixelalive5 = new TCanvas(("c_pixelalive5_"+chip).c_str(),("Efficiency when injecting in coupled pixel of chip "+chip).c_str(),800,768);
-    h_pixelalive5->Draw("colz");
-    c_pixelalive5->SaveAs((plotDir+module+"_eff_coupled_"+chip+".png").c_str());
-    
-    TCanvas *c_pixelalive6 = new TCanvas(("c_pixelalive6_"+chip).c_str(),("Efficiency when injecting in uncoupled pixel of chip "+chip).c_str(),800,768);
-    h_pixelalive6->Draw("colz");
-    c_pixelalive6->SaveAs((plotDir+module+"_eff_uncoupled_"+chip+".png").c_str());
-    
-    TCanvas *c_suspicious2D = new TCanvas(("c_suspicious2D_"+chip).c_str(),("Suspicious channels of chip "+chip).c_str(),800,768);
-    h_suspicious2D->Draw("colz");
-    c_suspicious2D->SaveAs((plotDir+module+"_suspicious2D_"+chip+".png").c_str()); */
-    
+    // TCanvas arguments are: name, title, x, y, width, height    
     TCanvas *c_confirmed2D = new TCanvas(("c_confirmed2D_"+chip).c_str(),("Confirmed disconnected channels of chip "+chip).c_str(),800,768); // Necessary plot
     h_confirmed2D->Draw("colz");
     //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
 
     //Create root file out of missing bumps histogram
-    TFile out_file("outputroot/xtalk/h_missing2dC12.root","RECREATE");
+    TFile out_file("output/xtalk_m-"+module+"_c-"+chip+".root","RECREATE");
     h_confirmed2D->Write();
     out_file.Close();
      
