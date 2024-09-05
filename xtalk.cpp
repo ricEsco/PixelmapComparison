@@ -1,5 +1,7 @@
 #include <string>
 #include <fstream>
+#include <algorithm> // for std::fill_n and std::copy_n
+#include <iterator>  // for std::__to_address
 
 using namespace std;
 
@@ -15,14 +17,18 @@ void xtalk(){
     float uncoupled_eff = 0.3;         // Threshold (as a fraction) for a pixel to be considered uncoupled
    
    // ---- ---- ---- ---- Retrieving files and histograms ---- ---- ---- ----
-   
-   TFile *f_injtype1 = new TFile("input/"+injtype1_run+"_PixelAlive.root");
-   TFile *f_injtype5 = new TFile("input/"+injtype5_run+"_PixelAlive.root");
-   TFile *f_injtype6 = new TFile("input/"+injtype6_run+"_PixelAlive.root");
-   string baseDir = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_";
-   string shortBaseDir = "D_B(0)_O(0)_H(0)_";
+    std::string filename1 = "input/" + injtype1_run + "_PixelAlive.root";
+    std::string filename5 = "input/" + injtype5_run + "_PixelAlive.root";
+    std::string filename6 = "input/" + injtype6_run + "_PixelAlive.root";
 
-   for (int ch = 12; ch >= 12; ch--){
+    TFile *f_injtype1 = new TFile(filename1.c_str());
+    TFile *f_injtype5 = new TFile(filename5.c_str());
+    TFile *f_injtype6 = new TFile(filename6.c_str());
+
+    string baseDir = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_";
+    string shortBaseDir = "D_B(0)_O(0)_H(0)_";
+
+    for (int ch = 12; ch >= 12; ch--){
 
     string chip = to_string(ch);
     string plotDir = "plots/";
@@ -90,7 +96,7 @@ void xtalk(){
     //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
 
     //Create root file out of missing bumps histogram
-    TFile out_file("output/xtalk_m-"+module+"_c-"+chip+".root","RECREATE");
+    TFile out_file(("output/xtalk_m-"+module+"_c-"+chip+".root").c_str(),"RECREATE");
     h_confirmed2D->Write();
     out_file.Close();
      

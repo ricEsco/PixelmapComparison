@@ -7,9 +7,14 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
     xtalk_file = ROOT.TFile(xtalk_file_path, "READ")
     frbias_file = ROOT.TFile(frbias_file_path, "READ")
     
-    h_xray = xray_file.Get("MissingMap")
-    h_xtalk = xtalk_file.Get("h_confirmed2D")
-    h_frbias = frbias_file.Get("missing_map")
+    # h_xray = xray_file.Get("MissingMap")
+    # h_xtalk = xtalk_file.Get("h_confirmed2D")
+    # h_frbias = frbias_file.Get("missing_map")
+
+    # Toy histograms to test logic, delete when using real histograms
+    h_xray = xray_file.Get("hist1")
+    h_xtalk = xtalk_file.Get("hist2")
+    h_frbias = frbias_file.Get("hist3")
 
     # Clone the X-ray histogram to create a result histogram
     h_xray_exclusive = h_xray.Clone("h_xray_exclusive")
@@ -35,24 +40,32 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
             for j in range(1, histogram.GetNbinsY()+1):
                 histogram.SetBinContent(i, j, 0)
 
+    # bin by bin comparison of histograms, then fill result histograms
     for i in range(1, h_xray_exclusive.GetNbinsX() + 1):
         for j in range(1, h_xray_exclusive.GetNbinsY() +1):
             xraybin = h_xray.GetBinContent(i, j)
             xtalkbin = h_xtalk.GetBinContent(i, j)
             frbiasbin = h_frbias.GetBinContent(i, j)
+            # xray exclusive
             if ((xraybin) and (not xtalkbin) and (not frbiasbin)):
                 h_xray_exclusive.SetBinContent(i, j, 1)
+            # xtalk exclusive
             elif ((not xraybin) and (xtalkbin) and (not frbiasbin)):
                 h_xtalk_exclusive.SetBinContent(i, j, 1)
+            # frbias exclusive
             elif ((not xraybin) and (not xtalkbin) and (frbiasbin)):
                 h_frbias_exclusive.SetBinContent(i, j, 1)
-            elif ((xraybin) and (xtalkbin) and (not frbiasbin)):
+            # xray and xtalk (ignore frbias)
+            if ((xraybin) and (xtalkbin)):
                 h_xray_xtalk.SetBinContent(i, j, 1)
-            elif ((xraybin) and (not xtalkbin) and (frbiasbin)):
+            # xray and frbias (ignore xtalk)
+            if ((xraybin) and (frbiasbin)):
                 h_xray_frbias.SetBinContent(i, j, 1)
-            elif ((not xraybin) and (xtalkbin) and (frbiasbin)):
+            # xtalk and frbias (ignore xray)
+            if ((xtalkbin) and (frbiasbin)):
                 h_xtalk_frbias.SetBinContent(i, j, 1)
-            elif ((xraybin) and (xtalkbin) and (frbiasbin)):
+            # xray, xtalk, and frbias
+            if ((xraybin) and (xtalkbin) and (frbiasbin)):
                 h_xray_xtalk_frbias.SetBinContent(i, j, 1)
 
     # Set custom color palettes
@@ -80,7 +93,6 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
     c = ROOT.TCanvas("c", "Canvas", h_xray_exclusive.GetNbinsX(), h_xray_exclusive.GetNbinsY())
     
     # Draw and save histograms
-
     histnames = ["h_xray_exclusive", "h_xtalk_exclusive", "h_frbias_exclusive", "h_xray_xtalk", "h_xray_frbias", "h_xtalk_frbias", "h_xray_xtalk_frbias"]
     
     for hist, name in zip(histograms, histnames):
@@ -112,7 +124,8 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
 xray_file_path = "/home/kalib/Analysis/outputroot/xray/xrayroot12.root"
 xtalk_file_path = "/home/kalib/Analysis/outputroot/xtalk/h_missing2dC12.root"
 frbias_file_path = "/home/kalib/Analysis/outputroot/frbias/histograms.root"
-output_file_path = "/home/kalib/Analysis/results/RH0026C12Comparison.root"
-png_file_path_base = "/home/kalib/Analysis/results/histogram"
+output_file_path = "testcomparison.root"
+png_file_path_base = "testcomparison"
 
-compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output_file_path)
+# compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output_file_path)
+compare_xtalk_xray("toy_histograms.root", "toy_histograms.root", "toy_histograms.root", output_file_path)
