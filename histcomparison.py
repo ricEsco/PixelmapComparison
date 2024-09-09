@@ -1,4 +1,5 @@
 import ROOT
+ROOT.gROOT.SetBatch(True)
 from array import array
 
 def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output_file_path):
@@ -109,10 +110,10 @@ def compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output
     print("Comparison complete. Result saved to: ", output_file_path)
 
 # Example usage
-xray_file_path = "/home/kalib/Analysis/outputroot/xray/xrayroot12.root"
-xtalk_file_path = "/home/kalib/Analysis/outputroot/xtalk/h_missing2dC12.root"
-frbias_file_path = "/home/kalib/Analysis/outputroot/frbias/histograms.root"
-output_file_path = "/home/kalib/Analysis/results/RH0026C12Comparison.root"
-png_file_path_base = "/home/kalib/Analysis/results/histogram"
+xray_file_path = "outputroot/xray/xrayroot12.root"
+xtalk_file_path = "outputroot/xtalk/h_missing2dC12.root"
+frbias_file_path = "outputroot/frbias/histograms_chip12.root"
+output_file_path = "results/RH0026C12Comparison.root"
+png_file_path_base = "results/histogram"
 
 compare_xtalk_xray(xray_file_path, xtalk_file_path, frbias_file_path, output_file_path)

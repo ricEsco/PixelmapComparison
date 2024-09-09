@@ -3,13 +3,15 @@
 
 using namespace std;
 
+gROOT->SetBatch();
+
 void xtalk(){
    
    // ---- ---- ---- ---- Retrieving files and histograms ---- ---- ---- ----
    
-   TFile *f_injtype1 = new TFile("inputroot/Run000059_PixelAlive.root");
-   TFile *f_injtype5 = new TFile("inputroot/Run000060_PixelAlive.root");
-   TFile *f_injtype6 = new TFile("inputroot/Run000061_PixelAlive.root");
+   TFile *f_injtype1 = new TFile("Run000034_PixelAlive.root");
+   TFile *f_injtype5 = new TFile("Run000035_PixelAlive_coupled.root");
+   TFile *f_injtype6 = new TFile("Run000036_PixelAlive_uncoupled.root");
    
    float alive_eff = 0.9;
    float coupled_eff = 0.5;
@@ -17,9 +19,9 @@ void xtalk(){
    
    string baseDir = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_";
    string shortBaseDir = "D_B(0)_O(0)_H(0)_";
-   string module = "RH0026";
+   string module = "RH0027";
 
-   
+//    CHIP ID, needs to be changed
    for (int ch = 12; ch >= 12; ch--){
 
     string chip = to_string(ch);
@@ -65,6 +67,7 @@ void xtalk(){
                 confirmed_row.push_back(i);
                 confirmed_col.push_back(j);
                 h_confirmed2D->SetBinContent(j+1,i+1,1);
+                cout << "(" << i << ", " << j << ")" << endl;
             }
             else {
                 h_confirmed2D->SetBinContent(j+1,i+1,0);
@@ -102,6 +105,10 @@ void xtalk(){
     TCanvas *c_confirmed2D = new TCanvas(("c_confirmed2D_"+chip).c_str(),("Confirmed disconnected channels of chip "+chip).c_str(),800,768); // Necessary plot
     h_confirmed2D->Draw("colz");
     //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
+
+
+
+//    CHIP ID, needs to be changed
 
     //Create root file out of missing bumps histogram
     TFile out_file("outputroot/xtalk/h_missing2dC12.root","RECREATE");
