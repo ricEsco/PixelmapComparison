@@ -5,8 +5,8 @@ chip = "12"
 histdirectory = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_"
 histnameprefix = "/D_B(0)_O(0)_H(0)_"
 
-forwardroot = ROOT.TFile("/home/kalib/Analysis/inputroot/Run000005_SCurve.root", "READ")
-reverseroot = ROOT.TFile("/home/kalib/Analysis/inputroot/Run000004_SCurve.root", "READ")
+forwardroot = ROOT.TFile("/home/kalib/Analysis/input/Run000005_SCurve.root", "READ")
+reverseroot = ROOT.TFile("/home/kalib/Analysis/input/Run000004_SCurve.root", "READ")
 
 forward_thr_canvas = forwardroot.Get(histdirectory+chip+histnameprefix+"Threshold2D_Chip("+chip+")")
 h_forward_thr = None
