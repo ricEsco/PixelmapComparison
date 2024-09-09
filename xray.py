@@ -28,16 +28,17 @@ import argparse
 
 # Arguments --------------------
 parser = argparse.ArgumentParser(description='Do the XRay analysis')
-parser.add_argument('-scurve','--scurve', help = 'The name of the SCurve.root (and txt) file', default = 'Run000081', type = str)
-parser.add_argument('-noise','--noise', help = 'The name of the noise.root file', default = 'Run000040', type = str)
-parser.add_argument('-outpath','--outpath', help = 'The name of the folder to be creaated in results', default = 'RH0027_Chip12', type = str)
-parser.add_argument('-module','--module', help = 'The name of the module', default = 'RH0027_Chip12', type = str)
+parser.add_argument('-scurve','--scurve', help = 'The name of the SCurve.root (and txt) file',                   default = 'Run000081', type = str)
+parser.add_argument('-noise','--noise', help = 'The name of the noise.root file',                                default = 'Run000040', type = str)
+parser.add_argument('-outpath','--outpath', help = 'The name of the folder to be creaated in results',           default = 'RH0027_Chip12', type = str)
+parser.add_argument('-module','--module', help = 'The name of the module',                                       default = 'RH0027_Chip12', type = str)
+parser.add_argument('-chip','--chip', help = 'The ROC ID [12,15] for Quads and [12,13] for Duals',               default = '12', type = str)
 parser.add_argument('-thr_missing','--thr_missing', help = 'The threshold to classify the missing bumps [Hits]', default = 1, type = int)
 parser.add_argument('-thr_strange','--thr_strange', help = 'The threshold to classify the Low Occ bumps [Hits]', default = 1000, type = int)
-parser.add_argument('-bias','--bias', help = 'The bias of the module [V]', default = '80', type = str)
-parser.add_argument('-vref','--vref', help = 'The VRef_ADC [mV]', default = 800, type = int)
-parser.add_argument('-ntrg','--ntrg', help = 'The total # of triggers in the xml', default = 1e7, type = int)
-parser.add_argument('-nbx','--nbx', help = 'The total # of bunch crossing for each trigger in the xml', default = 10, type = int) # AKA nEventsBurst
+parser.add_argument('-bias','--bias', help = 'The bias of the module [V]',                                       default = '80', type = str)
+parser.add_argument('-vref','--vref', help = 'The VRef_ADC [mV]',                                                default = 800, type = int)
+parser.add_argument('-ntrg','--ntrg', help = 'The total # of triggers in the xml',                               default = 1e7, type = int)
+parser.add_argument('-nbx','--nbx', help = 'The total # of bunch crossing for each trigger in the xml',          default = 10, type = int) # AKA nEventsBurst
 
 args = parser.parse_args()
 
@@ -46,6 +47,8 @@ args = parser.parse_args()
 
 # Path to the SCurve root file (contains threshold data)
 Sensor=args.module; thr_data_file='Run000021_SCurve.root'
+# CHIP ID, needs to be changed
+chipID=args.chip;
 # Path where the results will be stored
 Path='results_xray/'
 # Path to the NoiseScan root file (PixelAlive for us)
