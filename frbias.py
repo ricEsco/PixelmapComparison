@@ -1,12 +1,14 @@
 import ROOT
+ROOT.gROOT.SetBatch(True)
 import math
 
+# CHIP ID, needs to be changed
 chip = "12"
 histdirectory = "Detector/Board_0/OpticalGroup_0/Hybrid_0/Chip_"
 histnameprefix = "/D_B(0)_O(0)_H(0)_"
 
-forwardroot = ROOT.TFile("/home/kalib/Analysis/inputroot/Run000005_SCurve.root", "READ")
-reverseroot = ROOT.TFile("/home/kalib/Analysis/inputroot/Run000004_SCurve.root", "READ")
+forwardroot = ROOT.TFile("Run000044_SCurve_FW.root", "READ")
+reverseroot = ROOT.TFile("Run000043_SCurve.root", "READ")
 
 forward_thr_canvas = forwardroot.Get(histdirectory+chip+histnameprefix+"Threshold2D_Chip("+chip+")")
 h_forward_thr = None
@@ -54,15 +56,16 @@ for i in range(1, missing_map.GetNbinsX() + 1):
 
 for i in range(1, missing_map.GetNbinsX() + 1):
     for j in range(1, missing_map.GetNbinsY() + 1):
-        if (math.sqrt(((delta_thr.GetBinContent(i, j))**2) + ((delta_ns.GetBinContent(i, j))**2)) <= 5.0):
+        if (math.sqrt(((delta_thr.GetBinContent(i, j))**2) + ((delta_ns.GetBinContent(i, j))**2)) <= 0.5):
             missing_map.SetBinContent(i, j, 1)
 
 c = ROOT.TCanvas("c", "Canvas", missing_map.GetNbinsX(), missing_map.GetNbinsY())
 c.Clear()
 missing_map.Draw("missing_map")
-c.SaveAs("results/thr5missing_map.png")
+c.SaveAs("results/thrhalfmissing_map.png")
 
-output_file = ROOT.TFile("results/frbias/histograms.root", "RECREATE")
+# CHIP ID, needs to be changed
+output_file = ROOT.TFile("outputroot/frbias/histograms_chip12.root", "RECREATE")
 delta_thr.Write()
 delta_ns.Write()
 missing_map.Write()

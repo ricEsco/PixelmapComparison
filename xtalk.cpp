@@ -5,6 +5,8 @@
 
 using namespace std;
 
+gROOT->SetBatch();
+
 void xtalk(){
 
     // ---- ---- ---- ---- Declaration of variables ---- ---- ---- ----
@@ -73,6 +75,7 @@ void xtalk(){
                 confirmed_row.push_back(i);
                 confirmed_col.push_back(j);
                 h_confirmed2D->SetBinContent(j+1,i+1,1);
+                cout << "(" << i << ", " << j << ")" << endl;
             }
             else {
                 h_confirmed2D->SetBinContent(j+1,i+1,0);
@@ -94,6 +97,10 @@ void xtalk(){
     TCanvas *c_confirmed2D = new TCanvas(("c_confirmed2D_"+chip).c_str(),("Confirmed disconnected channels of chip "+chip).c_str(),800,768); // Necessary plot
     h_confirmed2D->Draw("colz");
     //c_confirmed2D->SaveAs((plotDir+module+"_confirmed2D_chip"+chip+".png").c_str());
+
+
+
+//    CHIP ID, needs to be changed
 
     //Create root file out of missing bumps histogram
     TFile out_file(("output/xtalk_m-"+module+"_c-"+chip+".root").c_str(),"RECREATE");
